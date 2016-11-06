@@ -1,0 +1,180 @@
+
+main[seq: TYPE]: THEORY
+BEGIN
+T: TYPE = setof[seq]
+p,q,r: VAR finseq[T]
+
+i,j,k,n: VAR NAT
+
+empty?(p): bool = p`length = 0
+
+head(j,p): finseq[T] =
+	   IF j < p`length THEN
+	   (# length := j,
+	   seq := LAMBDA (i:below[j]): p`seq(i)
+	   #)
+	   ELSE p
+	   ENDIF
+
+tail(k,p): finseq[T] = 
+	   	     if k <  p`length THEN
+		     (# length := p`length - k,
+		     seq := (LAMBDA (i: below[p`length - k]): p`seq(k + i))
+		     #)
+		     ELSE empty_seq
+		     ENDIF
+
+cut(j,k,p): finseq[T] = 
+	    	       IF k <p`length AND j < p`length AND j < k THEN 
+	    	     (# length := k - j,
+		     seq :=(LAMBDA (i:below[k-j]): p`seq(j + i))
+		     #)ELSE
+		     empty_seq
+		ENDIF
+
+equal_multi: LEMMA k<length(p) AND j<k AND j>0 
+	     	   IMPLIES head(j,p) o cut(j,k,p) o tail(k,p) = p
+
+head_tail: LEMMA
+        	head(n, tail(j, p)) = tail(j, head(j+n, p))
+
+equal_single: LEMMA 	
+	      	head(j,p) o tail(j,p) = p
+
+p_emptyhead: LEMMA head(j,empty_seq) = empty_seq
+
+p_emptytail: LEMMA tail(j,empty_seq) = empty_seq
+
+p_emptycut: LEMMA cut(j,k,empty_seq) = empty_seq
+
+
+j_emptyhead: LEMMA length(p)>0 IMPLIES   head(0,p) = empty_seq
+
+j_emptytail: LEMMA length(p)> 0 IMPLIES tail(0,p) = p
+
+ jk_emptycut: LEMMA length(p)> 0  IMPLIES   cut(0,0,p) = empty_seq
+
+lengthhead: LEMMA length(p)=length(q) IMPLIES length(head(j,p))= length(head(j,q))
+
+lengthtail: LEMMA length(p)=length(q) IMPLIES length(tail(j,p))= length(tail(j,q))
+
+lengthcut: LEMMA length(p)=length(q) AND j<k AND k<length(p) 
+	      IMPLIES length(cut(j,k,p))= length(cut(j,k,q))
+
+crossover(p,q,j): finseq[T] = head (j,p) o tail(j,q)
+
+cross(p,q,j,k):finseq[T] = head(j,p) o cut(j,k,q) o tail(k,p)
+
+equal2: THEOREM k <length(p) AND length(p) = length(q)  AND j < k IMPLIES 
+     length(cross(p,q,j,k)) = length(p)
+
+zero_j: LEMMA k<length(p) AND k>0 ANd length(p)= length(q)
+     IMPLIES cross(p,q,0,k) = crossover(q,p,k)
+
+zero_k: LEMMA   j<length(q) and j>0 and length(p)= length(q) 
+     IMPLIES cross(p,q,j,0)  = crossover(q,p,j)
+
+greater_j: THEOREM   j > length(p) AND k < length(p) AND  j>k and 
+     IMPLIES cross(p,q,j,k) =  crossover(q,p,k)
+
+greater_k: LEMMA k > length(p) AND length(p) = length(p) AND 
+     j=length(q) IMPLIES cross(p,q,j,k) = crossover(q,p,j)
+
+j_exchange_k: LEMMA length(p)= length(q) AND j>0 AND k>0 AND k-j=0
+     AND k<length(p) AND j<length(p) IMPLIES cross(p,q,j,k) = cross(p,q,k,j)
+
+greater_jk: LEMMA j>length(p) AND k>length(p) IMPLIES cross(p,q,j,k) = p
+
+equal1: THEOREM length(crossover(p,q,j)) = length(p) 
+
+head: THEOREM j > length(p) AND length(p)= length(q) IMPLIES crossover(p,q,j) = p
+
+plength: LEMMA crossover(p,q, length(p))=p 
+
+zero: LEMMA crossover(p,q,0) = q
+
+zero1: LEMMA crossover(q,p,0) = p
+
+p,q,s,d,h,t, r: VAR finseq[T]
+i,j,k,n: VAR nat
+a, b, c: VAR T
+
+ne_seq?(p): bool =
+             (length(p) > 0)
+
+singletonseq(t:T): finseq[T] =
+          (# length := 1,
+           seq := LAMBDA (i:below(1)):t
+           #)
+fst(p: (ne_seq?)):T = p`seq(0)
+
+asd: lemma fst(p)`seq = p(0)`seq
+
+tai(p: (ne_seq?)): {d : finseq[T] | d`length < p`length} =
+  LET len = p`length - 1
+    IN (# length := len, seq := (LAMBDA (i:below(len)): p`seq(i+1)) #)
+
+first: lemma length(p)> 1 IMPLIES length(tai(p))=  length(p)-1
+
+first2: lemma length(p)> 1 implies tai(p)`seq = p`seq(0)
+
+find(a, p, (m: upto(p`length))): RECURSIVE upto(p`length) =
+  (IF m = p`length
+   THEN m
+   ELSIF p`seq(m) = a
+     THEN m
+     ELSE find(a, p, m+1)
+     ENDIF)
+     MEASURE p`length - m
+
+remove(p, (i: below(p`length))): finseq[T]  =
+ LET newlen = p`length - 1
+   IN
+  p WITH [`length := newlen,
+          `seq := (LAMBDA (j:below(newlen)): IF j < i THEN p`seq(j) ELSE p`seq(j+1) ENDIF)]
+ 
+
+delete_seq(d, p): RECURSIVE finseq[T] =
+ IF ne_seq?(d)
+  THEN LET a = fst(d),
+           i = find(a, p, 0)
+     IN IF i < p`length
+         THEN delete_seq(tai(d), remove(p, i))
+         ELSE delete_seq(tai(d), p)
+         ENDIF
+  ELSE empty_seq
+  ENDIF
+  MEASURE d`length
+
+fi: lemma length(d)> 0 and length(p)> length(d)
+                IMPLIES length(delete_seq(d,p))= length(p)-length(d)
+
+cut(j,k,p): finseq[T] = 
+	    	       IF k <p`length AND j < p`length AND j < k THEN 
+	    	     (# length := k - j,
+		     seq :=(LAMBDA (i:below[k-j]): p`seq( j+i))#)
+		     
+		     ELSE IF j>length(p) and k<length(p) and k<j THEN
+		     	     head(k,p) 
+	     ELSE IF k>length(p) and j<length(p) and k>j THEN
+		     	     head(j,p) 
+			ELSE empty_seq
+		ENDIF ENDIF ENDIF
+
+crossover(p,q,j): finseq[T] = 
+		  	   head (j,p) o tail(j,q)
+
+ordercrossover(p,q,j,k):finseq[T]=
+          let s= cut(j,k,p),
+	      d=delete_seq(s,q)
+                 IN IF ne_seq?(d)
+THEN
+             head(j,d)o s o tail(k,d)
+ELSE
+              p
+ENDIF  
+
+asd: lemma   ordercrossover(p,q,0,0) =p 
+
+
+END main
