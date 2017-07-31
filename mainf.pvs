@@ -1,0 +1,109 @@
+main[seq: TYPE]: THEORY
+
+  BEGIN
+
+ T: TYPE = setof[seq]
+
+p,q,r: VAR finseq[T]
+i,j,k,n: VAR nat
+
+empty?(p): bool = p`length = 0
+
+ne_seq?(p): bool =
+	    	 length(p) > 0
+
+singletonseq(t:T): finseq[T] =
+		  (# length := 1,
+		   seq := LAMBDA (i:below(1)):t
+		   #)
+
+% HEAD definition
+
+head(j,p): finseq[T] =
+			IF j < p`length THEN
+			       (# length := j,
+			       seq := LAMBDA (i:below[j]): p`seq(i)
+			       	  	  				       	  	 	        #)
+			ELSE p
+			ENDIF
+
+% TAIL definition    
+
+tail(k,p): finseq[T] = 
+	   	     if k <  p`length THEN
+		     (# length := p`length - k,
+		     seq := (LAMBDA (i: below[p`length - k]): p`seq(k+i))
+		     #)
+		     ELSE empty_seq
+		     ENDIFcut(j,k,p): finseq[T] = 
+	    	       IF k <p`length AND j < p`length AND j < k THEN 
+	    	     (# length := k - j,
+		     seq :=(LAMBDA (i:below[k-j]): p`seq( j+i))#)
+		     
+		     ELSE IF j>length(p) and k<length(p) and k<j THEN
+		     	     head(k,p) 
+	     ELSE IF k>length(p) and j<length(p) and k>j THEN
+		     	     head(j,p) 
+			ELSE empty_seq
+		ENDIF ENDIF ENDIF
+
+% CUT definition
+
+cut(j,k,p): finseq[T] = 
+	    	       IF k <p`length AND j < p`length AND j < k THEN 
+	    	     (# length := k - j,
+		     seq :=(LAMBDA (i:below[k-j]): p`seq( j+i))#)
+		     
+		     ELSE IF j>length(p) and k<length(p) and k<j THEN
+		     	     head(k,p) 
+	     ELSE IF k>length(p) and j<length(p) and k>j THEN
+		     	     head(j,p) 
+			ELSE empty_seq
+		ENDIF ENDIF ENDIF
+
+%——————————————————————-
+wholestring(p): finseq[T] =
+    if length(p) > 0 THEN head(length(p) - 1, p)
+    else empty_seq ENDIF
+%———————————————————————
+%PROPOERTIES OF HEAD, CUT AND TIAL OPERATORS
+
+equal_multi: LEMMA k<length(p) AND j<k AND j>0 
+	     	   IMPLIES head(j,p) o cut(j,k,p) o tail(k,p) = p
+%..................................................................
+head_tail: LEMMA
+        	head(n, tail(j, p)) = tail(j, head(j+n, p))
+%....................................................................
+equal_single: LEMMA 	
+	      	head(j,p) o tail(j,p) = p
+% if p =[] then output string obtained by head, tail and cut operator will be empty
+p_emptyhead: LEMMA head(j,empty_seq) =empty_seq
+
+p_emptytail: LEMMA tail(j,empty_seq) = empty_seq
+
+p_emptycut: LEMMA cut(j,k,empty_seq) = empty_seq
+
+%if crossover points are 0 then resulting string will be null (0)
+j_emptyhead: LEMMA length(p)>0 IMPLIES   head(0,p) = empty_seq
+
+j_emptytail: LEMMA length(p)> 0 IMPLIES tail(0,p) = p
+
+ jk_emptycut: LEMMA length(p)> 0  IMPLIES   cut(0,0,p) = empty_seq
+
+%if parents strings length is equal then length of strings obtained by applying head
+%cut and tail operation on p and q will be satyme
+%...............................................................................
+lengthhead: LEMMA length(p)=length(q) IMPLIES length(head(j,p))= length(head(j,q))
+
+lengthtail: LEMMA length(p)=length(q) IMPLIES length(tail(j,p))= length(tail(j,q))
+
+lengthcut: LEMMA length(p)=length(q) AND j<k AND k<length(p) 
+	      IMPLIES length(cut(j,k,p))= length(cut(j,k,q))
+%...............................................................................
+     %qualpq: LEMMA p`seq=q`seq AND tail(0,p)= q IMPLIES p=q
+%........................................................	
+
+END main
+
+
+% type checking, skolemization, propositional logic, first order logic and second order logic. 

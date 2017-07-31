@@ -1,0 +1,81 @@
+
+% Single point and Multipoint Crossover Operators and its PROPERTIES
+
+crossover[seq: TYPE]: THEORY
+
+BEGIN
+T: type = setof[seq]
+p,  q: VAR finseq[T]      
+i, j, k: VAR nat       
+
+IMPORTING main
+ne_seq?(p): bool =
+	    	 length(p) > 0
+%——————————————————————————————————————————————————————————————————————————————
+
+% Multipoint crossover operator
+cross(p,q,j,k):finseq[T] =
+      head(j,p) o cut(j,k,q) o tail(k,p)
+%——————————————————————————————————————————————————————————————————-
+
+    
+% Single Crossover Operator
+crossover(p,q,j): finseq[T] = 
+		  	   head (j,p) o tail(j,q)
+
+% Properties of Multipoint Crossover Operator
+
+equal2: THEOREM
+	k <length(p) AND length(p) = length(q)  AND j < k IMPLIES 
+	length(cross(p,q,j,k)) = length(p)
+%...............................................................
+zero_j: LEMMA
+           k<length(p) AND k>0 ANd length(p)= length(q)
+      IMPLIES cross(p,q,0,k) = crossover(q,p,k)
+
+zero_k: LEMMA   j<length(q) and j>0 and length(p)= length(q) 
+	       IMPLIES cross(p,q,j,0)  = crossover(q,p,j)
+%...................................................................
+greater_j: THEOREM
+ 	        j > length(p) AND k < length(p) AND  j>k and 
+		length(p) = length(q)
+	   IMPLIES cross(p,q,j,k) =  crossover(q,p,k)
+
+greater_k: LEMMA
+                k > length(p) AND length(p) = length(p) AND j=length(q)
+            IMPLIES cross(p,q,j,k) = crossover(q,p,j)
+%............................................................
+
+j_exchange_k: LEMMA length(p)= length(q) AND j>0 AND k>0 AND k-j=0
+AND k<length(p) AND j<length(p)
+	      	    IMPLIES cross(p,q,j,k) = cross(p,q,k,j)
+%.............................................................
+
+greater_jk: LEMMA
+	         j  > length(p) AND k > length(p) AND length(p)= length(q)
+	         IMPLIES    cross(p,q,j,k) = p
+
+
+% Propoerties of Single Crossover Operator
+
+equal1:   THEOREM
+	    length(p) = length(q) 
+	    IMPLIES  length(crossover(p,q,j)) = length(p)
+head:     THEOREM 
+      	    j > length(p) AND length(p)= length(q) 
+       	  IMPLIES crossover(p,q,j) = p
+
+plength: LEMMA length(p)=length(q) IMPLIES crossover(p,q, length(p))=p
+
+
+zero: LEMMA
+		crossover(p,q,0) = q
+zero1: LEMMA
+		crossover(q,p,0) = p
+%——________________———————————________________________—————————______________
+
+
+END crossover
+
+
+
